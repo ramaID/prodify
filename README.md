@@ -51,6 +51,9 @@ MATOMO_PORT=8081
 # Mailpit
 MAIL_SERVER_PORT=1025
 MAIL_ADMIN_PORT=8025
+
+# Metabase
+METABASE_PORT=3000
 ```
 
 ### Mulai Layanan
@@ -98,7 +101,7 @@ Buka halaman Camunda (default: [`localhost:8080`](http://localhost:8080/camunda/
 
 ### Camunda
 
-- **Image**: camunda/camunda-bpm-platform:7.19.0
+- **Image**: camunda/camunda-bpm-platform:7.21.0
 - **Port**: 8080 (dapat dikonfigurasi)
 - **Bergantung pada**: Layanan PostgreSQL
 - **Lingkungan**:
