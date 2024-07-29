@@ -86,6 +86,7 @@ services:
       - '${MAIL_ADMIN_PORT:-8025}:8025'
 
   metabase:
+    platform: linux/amd64
     image: metabase/metabase:latest
     ports:
       - '${METABASE_PORT:-3000}:3000'
