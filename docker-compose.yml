@@ -11,13 +11,24 @@ services:
     volumes:
       - ./storage/postgres_data:/var/lib/postgresql/data
       - ./pgsql/create-laravel-database.sql:/docker-entrypoint-initdb.d/10-create-laravel-database.sql
-      - ./pgsql/create-matomo-database.sql:/docker-entrypoint-initdb.d/20-create-matomo-database.sql
-      - ./pgsql/create-metabase-database.sql:/docker-entrypoint-initdb.d/30-create-metabase-database.sql
+      - ./pgsql/create-metabase-database.sql:/docker-entrypoint-initdb.d/20-create-metabase-database.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-user}"]
       interval: 6s
       timeout: 3s
       retries: 5
+
+  mariadb:
+    image: mariadb:11.4
+    ports:
+      - '${MYSQL_PORT:-3306}:3306'
+    environment:
+      MYSQL_ROOT_PASSWORD: '${MARIADB_PASSWORD:-secret}'
+      MYSQL_DATABASE: '${MARIADB_NAME:-matomo}'
+      MYSQL_USER: '${MARIADB_USER:-user}'
+      MYSQL_PASSWORD: '${MARIADB_PASSWORD:-secret}'
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/healthcheck.sh", "--su-mysql", "--connect", "--innodb_initialized"]
 
   mongo:
     image: mongo:latest
@@ -62,13 +73,17 @@ services:
     ports:
       - '${MATOMO_PORT:-8081}:80'
     environment:
-      MATOMO_DATABASE_HOST: pgsql
-      MATOMO_DATABASE_ADAPTER: pgsql
+      MATOMO_DATABASE_HOST: mariadb
+      MATOMO_DATABASE_ADAPTER: MYSQLI
+      MATOMO_DATABASE_SCHEMA: Mariadb
       MATOMO_DATABASE_USERNAME: '${DB_USER:-user}'
       MATOMO_DATABASE_PASSWORD: '${DB_PASSWORD:-secret}'
       MATOMO_DATABASE_DBNAME: matomo
     volumes:
       - ./storage/matomo_data:/var/www/html:z'
+    depends_on:
+      mariadb:
+        condition: service_healthy
 
   redis:
     image: redis:latest
@@ -80,8 +95,6 @@ services:
   mailpit:
     image: axllent/mailpit:latest
     ports:
-      - "1025:1025"
-      - "8025:8025"
       - '${MAIL_SERVER_PORT:-1025}:1025'
       - '${MAIL_ADMIN_PORT:-8025}:8025'
 
