@@ -1,0 +1,112 @@
+services:
+  pgsql:
+    image: postgres:latest
+    environment:
+      PGPASSWORD: '${PGPASSWORD:-secreted}'
+      POSTGRES_USER: '${DB_USER:-user}'
+      POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
+      POSTGRES_DB: '${DB_NAME:-camunda}'
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    volumes:
+      - ./storage/postgres_data:/var/lib/postgresql/data
+      - ./pgsql/create-laravel-database.sql:/docker-entrypoint-initdb.d/10-create-laravel-database.sql
+      - ./pgsql/create-matomo-database.sql:/docker-entrypoint-initdb.d/20-create-matomo-database.sql
+      - ./pgsql/create-metabase-database.sql:/docker-entrypoint-initdb.d/30-create-metabase-database.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-user}"]
+      interval: 6s
+      timeout: 3s
+      retries: 5
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - '${MONGO_PORT:-27017}:27017'
+    volumes:
+      - ./storage/mongo_data:/data/db
+
+  minio:
+    image: minio/minio:latest
+    environment:
+      MINIO_ROOT_USER: '${MINIO_USER:-minioadmin}'
+      MINIO_ROOT_PASSWORD: '${MINIO_PASSWORD:-minioadmin}'
+    ports:
+      - '${MINIO_PORT:-9000}:9000'
+      - '${MINIO_CONSOLE_PORT:-8900}:8900'
+    command: 'minio server /data/minio --console-address ":8900"'
+    volumes:
+      - ./storage/minio_data:/data
+
+  camunda:
+    image: camunda/camunda-bpm-platform:7.21.0
+    ports:
+      - '${CAMUNDA_PORT:-8080}:8080'
+    depends_on:
+      pgsql:
+        condition: service_healthy
+    links:
+      - pgsql
+    environment:
+      TZ: Asia/Jakarta
+      DB_DRIVER: org.postgresql.Driver
+      DB_URL: jdbc:postgresql://pgsql:5432/camunda
+      DB_USERNAME: '${DB_USER:-user}'
+      DB_PASSWORD: '${DB_PASSWORD:-secret}'
+    volumes:
+      - camunda:/camunda
+      - ./storage/camunda_data:/camunda/webapps/camunda-invoice
+
+  matomo:
+    image: matomo:latest
+    ports:
+      - '${MATOMO_PORT:-8081}:80'
+    environment:
+      MATOMO_DATABASE_HOST: pgsql
+      MATOMO_DATABASE_ADAPTER: pgsql
+      MATOMO_DATABASE_USERNAME: '${DB_USER:-user}'
+      MATOMO_DATABASE_PASSWORD: '${DB_PASSWORD:-secret}'
+      MATOMO_DATABASE_DBNAME: matomo
+    volumes:
+      - ./storage/matomo_data:/var/www/html:z'
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./storage/redis_data:/data
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+      - '${MAIL_SERVER_PORT:-1025}:1025'
+      - '${MAIL_ADMIN_PORT:-8025}:8025'
+
+  metabase:
+    image: metabase/metabase:latest
+    ports:
+      - '${METABASE_PORT:-3000}:3000'
+    depends_on:
+      pgsql:
+        condition: service_healthy
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabase
+      MB_DB_PORT: 5432
+      MB_DB_USER: ${DB_USER:-user}
+      MB_DB_PASS: '${DB_PASSWORD:-secret}'
+      MB_DB_HOST: pgsql
+    healthcheck:
+      test: curl --fail -I http://localhost:3000/api/health || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./storage/metabase_data:/metabase-data
+
+volumes:
+  camunda:
+    driver: local

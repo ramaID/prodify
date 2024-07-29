@@ -1,0 +1,5 @@
+/storage/matomo_data
+/storage/minio_data
+/storage/mongo_data
+/storage/postgres_data
+/storage/redis_data
