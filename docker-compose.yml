@@ -12,6 +12,7 @@ services:
       - ./storage/postgres_data:/var/lib/postgresql/data
       - ./pgsql/create-laravel-database.sql:/docker-entrypoint-initdb.d/10-create-laravel-database.sql
       - ./pgsql/create-metabase-database.sql:/docker-entrypoint-initdb.d/20-create-metabase-database.sql
+      - ./pgsql/create-sonar-database.sql:/docker-entrypoint-initdb.d/30-create-metabase-database.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-user}"]
       interval: 6s
@@ -121,6 +122,22 @@ services:
     volumes:
       - ./storage/metabase_data:/metabase-data
 
+  sonar:
+    image: sonarqube:lts-community
+    depends_on:
+      pgsql:
+        condition: service_healthy
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://pgsql:5432/sonar
+      SONAR_JDBC_USERNAME: '${DB_USER:-user}'
+      SONAR_JDBC_PASSWORD: '${DB_PASSWORD:-secret}'
+    ports:
+      - '${SONAR_PORT:-9001}:9000'
+    volumes:
+      - sonar:/opt/sonarqube
+
 volumes:
   camunda:
+    driver: local
+  sonar:
     driver: local
