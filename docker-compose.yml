@@ -1,6 +1,6 @@
 services:
   pgsql:
-    image: postgres:latest
+    image: postgres:16.4
     environment:
       PGPASSWORD: '${PGPASSWORD:-secreted}'
       POSTGRES_USER: '${DB_USER:-user}'
@@ -13,6 +13,23 @@ services:
       - ./pgsql/create-laravel-database.sql:/docker-entrypoint-initdb.d/10-create-laravel-database.sql
       - ./pgsql/create-metabase-database.sql:/docker-entrypoint-initdb.d/20-create-metabase-database.sql
       - ./pgsql/create-sonar-database.sql:/docker-entrypoint-initdb.d/30-create-metabase-database.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-user}"]
+      interval: 6s
+      timeout: 3s
+      retries: 5
+
+  pgsql17:
+    image: postgres:17.0
+    environment:
+      PGPASSWORD: '${PGPASSWORD:-secreted}'
+      POSTGRES_USER: '${DB_USER:-user}'
+      POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
+      POSTGRES_DB: '${DB_NAME:-camunda}'
+    ports:
+      - '5433:5432'
+    volumes:
+      - ./storage/postgres_data17:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-user}"]
       interval: 6s

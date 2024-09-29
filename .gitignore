@@ -2,4 +2,5 @@
 /storage/minio_data
 /storage/mongo_data
 /storage/postgres_data
+/storage/postgres_data17
 /storage/redis_data
