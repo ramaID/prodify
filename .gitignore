@@ -4,3 +4,5 @@
 /storage/postgres_data
 /storage/postgres_data17
 /storage/redis_data
+/storage/mariadb_data
+/storage/jasper_data

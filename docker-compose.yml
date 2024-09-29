@@ -47,6 +47,8 @@ services:
       MYSQL_PASSWORD: '${MARIADB_PASSWORD:-secret}'
     healthcheck:
       test: ["CMD", "/usr/local/bin/healthcheck.sh", "--su-mysql", "--connect", "--innodb_initialized"]
+    volumes:
+      - ./storage/mariadb_data:/var/lib/mysql
 
   mongo:
     image: mongo:latest
@@ -152,6 +154,23 @@ services:
       - '${SONAR_PORT:-9001}:9000'
     volumes:
       - sonar:/opt/sonarqube
+
+  jasper:
+    image: 'docker.io/bitnami/jasperreports:7-debian-10'
+    ports:
+      - "${JASPER_PORT:-8082}:8080"
+    environment:
+      MARIADB_HOST: 'mariadb'
+      MARIADB_PORT_NUMBER: '3306'
+      JASPERREPORTS_DATABASE_USER: 'root'
+      JASPERREPORTS_DATABASE_PASSWORD: '${MARIADB_PASSWORD:-secret}'
+      JASPERREPORTS_DATABASE_NAME: 'jasper'
+      JASPERREPORTS_USERNAME: 'user'
+      JASPERREPORTS_PASSWORD: 'secret'
+    volumes:
+      - ./storage/jasperreports_data:/bitname
+    depends_on:
+      - mariadb
 
 volumes:
   camunda:
