@@ -172,6 +172,27 @@ services:
     depends_on:
       - mariadb
 
+  sso:
+    image: keycloak/keycloak:25.0
+    command: start
+    environment:
+      KC_HOSTNAME: 192.168.68.116
+      KC_HOSTNAME_PORT: "${KEYCLOAK_PORT:-8083}"
+      KC_HOSTNAME_STRICT_BACKCHANNEL: false
+      KC_HTTP_ENABLED: true
+      KC_HOSTNAME_STRICT_HTTPS: false
+      KC_HEALTH_ENABLED: true
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-secret}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://pgsql17/${POSTGRES_DB:-sso}
+      KC_DB_USERNAME: '${DB_USER:-user}'
+      KC_DB_PASSWORD: '${DB_PASSWORD:-secret}'
+    ports:
+      - '${KEYCLOAK_PORT:-8083}:8080'
+    depends_on:
+      - pgsql17
+
 volumes:
   camunda:
     driver: local
