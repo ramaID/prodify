@@ -156,7 +156,7 @@ services:
       - sonar:/opt/sonarqube
 
   jasper:
-    image: 'docker.io/bitnami/jasperreports:7-debian-10'
+    image: bitnami/jasperreports:7-debian-10
     ports:
       - "${JASPER_PORT:-8082}:8080"
     environment:
